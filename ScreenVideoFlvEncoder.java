@@ -25,8 +25,6 @@ public final class ScreenVideoFlvEncoder {
     private final static byte[] flvHeader = { 'F', 'L', 'V', 0x01, 0x01, 0x00, 0x00, 0x00, 0x09 };
     private final static byte[] videoTagType = { 0x09 };
     private final static byte[] streamId = { 0, 0, 0 };
-    private long startTimestamp = 0;
-    private boolean firstTag = true;
 
     private static byte FLV_TAG_HEADER_SIZE = 11;
     private ByteArrayOutputStream flvDataStream = new ByteArrayOutputStream();
@@ -49,21 +47,21 @@ public final class ScreenVideoFlvEncoder {
         return new byte[] { (byte) byte1, (byte) byte2, (byte) byte3, (byte) byte4 };
     }
 
-    public byte[] encodeFlvData(byte[] screenVideoData) throws RuntimeException {
+    public byte[] encodeFlvData(byte[] screenVideoData, long timestampMillis) throws RuntimeException {
         byte[] flvData;
         try {
-            flvData = encodeFlvTag(screenVideoData);
+            flvData = encodeFlvTag(screenVideoData, timestampMillis);
         } catch (IOException e) {
             throw new RuntimeException("Failed to encode FLV data.");
         }
         return flvData;
     }
 
-    private byte[] encodeFlvTag(byte[] videoData) throws IOException {
+    private byte[] encodeFlvTag(byte[] videoData, long timestampMillis) throws IOException {
         flvDataStream.reset();
         flvDataStream.write(videoTagType);
         flvDataStream.write(encodeDataSize(videoData.length));
-        flvDataStream.write(encodeTimestamp());
+        flvDataStream.write(encodeTimestamp(timestampMillis));
         flvDataStream.write(streamId);
         flvDataStream.write(videoData);
         flvDataStream.write(encodePreviousTagSize(FLV_TAG_HEADER_SIZE + videoData.length));
@@ -79,20 +77,11 @@ public final class ScreenVideoFlvEncoder {
         return new byte[] { (byte) byte1, (byte) byte2, (byte) byte3 };
     }
 
-    private byte[] encodeTimestamp() {
-        long now = System.currentTimeMillis();
-
-        if (firstTag) {
-            startTimestamp = now;
-            firstTag = false;
-        }
-
-        long elapsed = now - startTimestamp;
-
-        int byte1 = (int) (elapsed & 0xff0000) >> 16;
-        int byte2 = (int) (elapsed & 0xff00) >> 8;
-        int byte3 = (int) (elapsed & 0xff);
-        int tsExtended = ((int) elapsed & 0xff000000) >> 24;
+    private byte[] encodeTimestamp(long timestampMillis) {
+        int byte1 = (int) (timestampMillis & 0xff0000) >> 16;
+        int byte2 = (int) (timestampMillis & 0xff00) >> 8;
+        int byte3 = (int) (timestampMillis & 0xff);
+        int tsExtended = ((int) timestampMillis & 0xff000000) >> 24;
 
         return new byte[] { (byte) byte1, (byte) byte2, (byte) byte3, (byte) tsExtended };
     }

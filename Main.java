@@ -26,6 +26,8 @@ public class Main {
         int blockWidth = 16;
         int blockHeight = 16;
 
+        double framerate = 30;
+
         try {
             ScreenVideoFlvEncoder encoder = new ScreenVideoFlvEncoder();
 
@@ -61,7 +63,7 @@ public class Main {
                     }
                 }
 
-                fos.write(encoder.encodeFlvData(bos.toByteArray()));
+                fos.write(encoder.encodeFlvData(bos.toByteArray(), Math.round(i * 1000.0 / framerate)));
             }
             fos.close();
 
