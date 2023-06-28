@@ -2,7 +2,8 @@
 
 This is a very basic encoder for Flash Screen Video (V1 and V2) files into FLV container.
 
-It doesn't fully utilize the features of the V2 format.
+It encodes with a fixed 16x16 block size, only outputs keyframes, with 30 FPS.
+It also doesn't fully utilize the features of the V2 format.
 
 The original files (except for `Main.java` and this README) were salvaged from here, under the GNU LGPL (version 2.1 or 3.0) license:
 
