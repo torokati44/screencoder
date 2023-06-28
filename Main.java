@@ -52,11 +52,11 @@ public class Main {
 
                         BufferedImage subImage = image.getSubimage(blockLeft, blockBottom - height, width, height);
 
-                        int[] pixels = ScreenVideoEncoder.getPixels(subImage, 0, 0, width, height, useSVC2);
+                        int[] pixels = ScreenVideoEncoder.getPixels(subImage, 0, 0, width, height);
                         if (useSVC2)
                             bos.write(ScreenVideoEncoder.encodePixelsSVC2(pixels, width, height));
                         else
-                            bos.write(ScreenVideoEncoder.encodePixels(pixels, width, height, false));
+                            bos.write(ScreenVideoEncoder.encodePixels(pixels, width, height));
                     }
                 }
 

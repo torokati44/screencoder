@@ -19,7 +19,6 @@
 **/
 
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferInt;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -53,12 +52,6 @@ public final class ScreenVideoEncoder {
 
 	private static int[] paletteIndex; // maps c15 -> c7 (2^15=32768; palette size: 2^7=128)
 
-	public static int[] getPixelsFromImage(BufferedImage image) {
-		int[] picpixels = ((DataBufferInt)(image).getRaster().getDataBuffer()).getData();
-
-		return picpixels;
-	}
-
 	public static byte encodeFlvVideoDataHeader(boolean isKeyFrame, boolean useSVC2) {
 		return (byte) ((isKeyFrame ? FLV_KEYFRAME : FLV_INTERFRAME) + (useSVC2 ? SCREEN_VIDEO_CODEC_V2_ID : SCREEN_VIDEO_CODEC_ID));
 	}
@@ -82,34 +75,15 @@ public final class ScreenVideoEncoder {
 		return dims;
 	}
 
-	public static int[] getPixels(BufferedImage image, int x, int y, int width, int height, boolean useSVC2) throws PixelExtractException {
-		long start = System.currentTimeMillis();
-
-		/* Use this!!! Fast!!! (ralam Oct. 14, 2009) */
-		int[] pixels = image.getRGB(x, y, width, height, null, 0, width);
-
-		/* DO NOT user this. Slow. 10 times slower than the other one. */
-/*
-		PixelGrabber pg = new PixelGrabber(image, x, y, width, height, pixels, 0, width);
-		try {
-		    pg.grabPixels();
-		} catch (InterruptedException e) {
-		    throw new PixelExtractException("Interrupted waiting for pixels!");
-		}
-		if ((pg.getStatus() & ImageObserver.ABORT) != 0) {
-		    throw new PixelExtractException("Aborted or error while fetching image.");
-		}
-*/
-		long end = System.currentTimeMillis();
-//		System.out.println("Grabbing pixels[" + pixels.length + "] took " + (end-start) + " ms.");
-		return pixels;
+	public static int[] getPixels(BufferedImage image, int x, int y, int width, int height) {
+		return image.getRGB(x, y, width, height, null, 0, width);
 	}
 
-	public static byte[] encodePixels(int pixels[], int width, int height, boolean grayscale) {
+	public static byte[] encodePixels(int pixels[], int width, int height) {
 
 		changePixelScanFromBottomLeftToTopRight(pixels, width, height);
 
-		byte[] bgrPixels = convertFromRGBtoBGR(pixels, grayscale);
+		byte[] bgrPixels = convertFromRGBtoBGR(pixels);
 
 		byte[] compressedPixels = compressUsingZlib(bgrPixels);
 
@@ -144,7 +118,6 @@ public final class ScreenVideoEncoder {
 	private static void changePixelScanFromBottomLeftToTopRight(int[] pixels, int width, int height) {
 		int[] swap = new int[pixels.length];
 
-		long start = System.currentTimeMillis();
 		for (int i = 0; i < height; i++) {
 			int sourcePos = i * width;
 			int destPos = (height - (i+1)) * width;
@@ -152,10 +125,7 @@ public final class ScreenVideoEncoder {
 		}
 
 		System.arraycopy(swap, 0, pixels, 0, pixels.length);
-		long end = System.currentTimeMillis();
-//		System.out.println("Scanning pixels[" + pixels.length + "] took " + (end-start) + " ms.");
 	}
-
 
 	/**
 	 * Compress the byte array using Zlib.
@@ -163,7 +133,6 @@ public final class ScreenVideoEncoder {
 	 * @return a byte array of compressed data
 	 */
 	private static byte[] compressUsingZlib(byte[] pixels) {
-		long start = System.currentTimeMillis();
 	    // Create the compressed stream
 		 byte[] output = new byte[pixels.length];
 		 Deflater compresser = new Deflater(Deflater.BEST_COMPRESSION);
@@ -174,9 +143,6 @@ public final class ScreenVideoEncoder {
 		 byte[] zData = new byte[compressedDataLength] ;
 		 System.arraycopy(output, 0, zData, 0, compressedDataLength);
 
-		long end = System.currentTimeMillis();
-//		System.out.println("Compressing pixels[" + pixels.length + "] took " + (end-start) + " ms.");
-
 		// set the byte array to the newly compressed data
 		return zData;
 	}
@@ -186,8 +152,7 @@ public final class ScreenVideoEncoder {
 	 * @param pixels
 	 * @return pixels in BGR order
 	 */
-	private static byte[] convertFromRGBtoBGR(int[] pixels, boolean grayscale) {
-//		long start = System.currentTimeMillis();
+	private static byte[] convertFromRGBtoBGR(int[] pixels) {
 		byte[] rgbPixels = new byte[pixels.length * 3];
 		int position = 0;
 
@@ -195,34 +160,14 @@ public final class ScreenVideoEncoder {
 			byte red = (byte) ((pixels[i] >> 16) & 0xff);
 			byte green = (byte) ((pixels[i] >> 8) & 0xff);
 			byte blue = (byte) (pixels[i] & 0xff);
-/*
-			if (grayscale) {
-				byte brightness = convertToGrayScale(red, green, blue);
 
-				// Sequence should be BGR
-				rgbPixels[position++] = brightness;
-				rgbPixels[position++] = brightness;
-				rgbPixels[position++] = brightness;
-			} else {
-				// Sequence should be BGR
-				rgbPixels[position++] = blue;
-				rgbPixels[position++] = green;
-				rgbPixels[position++] = red;
-			}
-*/
 			// Sequence should be BGR
 			rgbPixels[position++] = blue;
 			rgbPixels[position++] = green;
 			rgbPixels[position++] = red;
 		}
 
-		long end = System.currentTimeMillis();
-//		System.out.println("Extracting pixels[" + pixels.length + "] took " + (end-start) + " ms.");
 		return rgbPixels;
-	}
-
-	private static byte convertToGrayScale(int r, int g, int b) {
-		return (byte)(0.212671 * r + 0.715160 * g + 0.072169 * b);
 	}
 
 	public static String toStringBits(int value) {

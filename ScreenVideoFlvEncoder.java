@@ -48,12 +48,12 @@ public final class ScreenVideoFlvEncoder {
     	return new byte[] {(byte)byte1, (byte)byte2, (byte)byte3, (byte)byte4};
     }
 
-    public byte[] encodeFlvData (byte[] screenVideoData) throws FlvEncodeException {
+    public byte[] encodeFlvData (byte[] screenVideoData) throws RuntimeException {
         byte[] flvData;
 		try {
 			flvData = encodeFlvTag(screenVideoData);
 		} catch (IOException e) {
-			throw new FlvEncodeException("Failed to encode FLV data.");
+			throw new RuntimeException("Failed to encode FLV data.");
 		}
         return flvData;
 	}
