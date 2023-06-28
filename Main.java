@@ -40,10 +40,11 @@ public class Main {
                 bos.write(ScreenVideoEncoder.encodeFlvVideoDataHeader(true, useSVC2));
 
                 BufferedImage image = ImageIO.read(new File(args[i]));
-                bos.write(ScreenVideoEncoder.encodeBlockAndScreenDimensions(blockWidth, image.getWidth(), blockHeight, image.getHeight()));
+                bos.write(ScreenVideoEncoder.encodeBlockAndScreenDimensions(blockWidth, image.getWidth(), blockHeight,
+                        image.getHeight()));
 
                 if (useSVC2)
-                    bos.write(new byte[] {0}); // reserved bits and some flags
+                    bos.write(new byte[] { 0 }); // reserved bits and some flags
 
                 for (int blockBottom = image.getHeight(); blockBottom > 0; blockBottom -= blockHeight) {
                     for (int blockLeft = 0; blockLeft < image.getWidth(); blockLeft += blockWidth) {
@@ -65,8 +66,7 @@ public class Main {
             fos.close();
 
             System.out.println("Done.");
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             System.out.println(e);
             System.exit(2);
         }

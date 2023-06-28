@@ -1,3 +1,4 @@
+
 /**
 * BigBlueButton open source conferencing system - http://www.bigbluebutton.org/
 *
@@ -21,78 +22,78 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 public final class ScreenVideoFlvEncoder {
-	private final static byte[] flvHeader = {'F','L','V',0x01,0x01,0x00,0x00,0x00,0x09};
-	private final static byte[] videoTagType = {0x09};
-	private final static byte[] streamId = {0, 0, 0};
-	private long startTimestamp = 0;
-	private boolean firstTag = true;
+    private final static byte[] flvHeader = { 'F', 'L', 'V', 0x01, 0x01, 0x00, 0x00, 0x00, 0x09 };
+    private final static byte[] videoTagType = { 0x09 };
+    private final static byte[] streamId = { 0, 0, 0 };
+    private long startTimestamp = 0;
+    private boolean firstTag = true;
 
-	private static byte FLV_TAG_HEADER_SIZE = 11;
-	private ByteArrayOutputStream flvDataStream = new ByteArrayOutputStream();
+    private static byte FLV_TAG_HEADER_SIZE = 11;
+    private ByteArrayOutputStream flvDataStream = new ByteArrayOutputStream();
 
-	public byte[] encodeHeader() {
-		byte[] prevTagSize =  encodePreviousTagSize(0);
-		byte[] header = new byte[flvHeader.length + prevTagSize.length];
+    public byte[] encodeHeader() {
+        byte[] prevTagSize = encodePreviousTagSize(0);
+        byte[] header = new byte[flvHeader.length + prevTagSize.length];
 
-		System.arraycopy(flvHeader, 0, header, 0, flvHeader.length);
-		System.arraycopy(prevTagSize, 0, header, flvHeader.length, prevTagSize.length);
-		return header;
-	}
-
-    private byte[] encodePreviousTagSize(long previousTagSize) {
-    	int byte1 = (int)previousTagSize >> 24;
-    	int byte2 = (int)previousTagSize >> 16;
-    	int byte3 = (int)previousTagSize >> 8;
-    	int byte4 = (int)previousTagSize & 0xff;
-
-    	return new byte[] {(byte)byte1, (byte)byte2, (byte)byte3, (byte)byte4};
+        System.arraycopy(flvHeader, 0, header, 0, flvHeader.length);
+        System.arraycopy(prevTagSize, 0, header, flvHeader.length, prevTagSize.length);
+        return header;
     }
 
-    public byte[] encodeFlvData (byte[] screenVideoData) throws RuntimeException {
+    private byte[] encodePreviousTagSize(long previousTagSize) {
+        int byte1 = (int) previousTagSize >> 24;
+        int byte2 = (int) previousTagSize >> 16;
+        int byte3 = (int) previousTagSize >> 8;
+        int byte4 = (int) previousTagSize & 0xff;
+
+        return new byte[] { (byte) byte1, (byte) byte2, (byte) byte3, (byte) byte4 };
+    }
+
+    public byte[] encodeFlvData(byte[] screenVideoData) throws RuntimeException {
         byte[] flvData;
-		try {
-			flvData = encodeFlvTag(screenVideoData);
-		} catch (IOException e) {
-			throw new RuntimeException("Failed to encode FLV data.");
-		}
+        try {
+            flvData = encodeFlvTag(screenVideoData);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to encode FLV data.");
+        }
         return flvData;
-	}
+    }
 
-	private byte[] encodeFlvTag(byte[] videoData) throws IOException {
-		flvDataStream.reset();
-		flvDataStream.write(videoTagType);
-		flvDataStream.write(encodeDataSize(videoData.length));
-	    flvDataStream.write(encodeTimestamp());
-	    flvDataStream.write(streamId);
-	    flvDataStream.write(videoData);
-	    flvDataStream.write(encodePreviousTagSize(FLV_TAG_HEADER_SIZE + videoData.length));
+    private byte[] encodeFlvTag(byte[] videoData) throws IOException {
+        flvDataStream.reset();
+        flvDataStream.write(videoTagType);
+        flvDataStream.write(encodeDataSize(videoData.length));
+        flvDataStream.write(encodeTimestamp());
+        flvDataStream.write(streamId);
+        flvDataStream.write(videoData);
+        flvDataStream.write(encodePreviousTagSize(FLV_TAG_HEADER_SIZE + videoData.length));
 
-	    return flvDataStream.toByteArray();
-	}
+        return flvDataStream.toByteArray();
+    }
 
     private byte[] encodeDataSize(int size) {
-    	int byte1 = (size >> 16);
-    	int byte2 = (size >> 8);
-    	int byte3 = (size & 0x0ff);
+        int byte1 = (size >> 16);
+        int byte2 = (size >> 8);
+        int byte3 = (size & 0x0ff);
 
-    	return new byte[] {(byte) byte1, (byte) byte2, (byte) byte3};
+        return new byte[] { (byte) byte1, (byte) byte2, (byte) byte3 };
     }
 
     private byte[] encodeTimestamp() {
-    	long now = System.currentTimeMillis();
+        long now = System.currentTimeMillis();
 
-    	if (firstTag) {
-    		startTimestamp = now;
-    		firstTag = false;
-    	}
+        if (firstTag) {
+            startTimestamp = now;
+            firstTag = false;
+        }
 
-    	long elapsed = now - startTimestamp;
+        long elapsed = now - startTimestamp;
 
-    	int byte1 = (int)(elapsed & 0xff0000) >> 16;
-    	int byte2 = (int)(elapsed & 0xff00) >> 8;
-    	int byte3 = (int)(elapsed & 0xff);
-    	int tsExtended = ((int)elapsed & 0xff000000) >> 24;
+        int byte1 = (int) (elapsed & 0xff0000) >> 16;
+        int byte2 = (int) (elapsed & 0xff00) >> 8;
+        int byte3 = (int) (elapsed & 0xff);
+        int tsExtended = ((int) elapsed & 0xff000000) >> 24;
 
-    	return new byte[] {(byte) byte1, (byte) byte2, (byte) byte3, (byte) tsExtended};
+        return new byte[] { (byte) byte1, (byte) byte2, (byte) byte3, (byte) tsExtended };
     }
 }
